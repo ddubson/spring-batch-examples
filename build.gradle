@@ -1,0 +1,28 @@
+plugins {
+    id 'org.springframework.boot' version '1.5.6.RELEASE'
+}
+
+ext {
+    springBootVersion = "1.5.6.RELEASE"
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'org.springframework.boot'
+
+dependencies {
+    compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
+    compile "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
+    compile "org.springframework.boot:spring-boot-starter-batch:$springBootVersion"
+    compile "mysql:mysql-connector-java:5.1.43"
+
+    // in-memory job repository
+    //compile 'com.h2database:h2:1.4.196'
+}
+
+mainClassName = "com.ddubson.batch.Application"
