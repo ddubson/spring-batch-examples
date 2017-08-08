@@ -28,11 +28,11 @@ apply plugin: 'application'
 apply plugin: 'org.springframework.boot'
 
 dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-batch:$springBootVersion"
     //compile "mysql:mysql-connector-java:5.1.43"
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
 
     // in-memory job repository
     compile 'com.h2database:h2:1.4.196'

@@ -1,61 +1,62 @@
 package com.ddubson.batch.configuration
 
 import org.springframework.batch.core.Job
-import org.springframework.batch.core.StepContribution
+import org.springframework.batch.core.Step
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
-import org.springframework.batch.core.job.builder.FlowBuilder
-import org.springframework.batch.core.job.flow.Flow
-import org.springframework.batch.core.scope.context.ChunkContext
-import org.springframework.batch.core.step.tasklet.Tasklet
+import org.springframework.batch.core.job.flow.JobExecutionDecider
 import org.springframework.batch.repeat.RepeatStatus
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.task.SimpleAsyncTaskExecutor
 
 @Configuration
 open class BatchConfiguration {
     @Autowired
-    var jobBuilderFactory : JobBuilderFactory? = null;
+    var jobBuilderFactory: JobBuilderFactory? = null
 
     @Autowired
-    var stepBuilderFactory : StepBuilderFactory? = null;
+    var stepBuilderFactory: StepBuilderFactory? = null
 
     @Bean
-    open fun tasklet(): Tasklet = CountingTasklet()
-
-    @Bean
-    open fun flow1(): Flow {
-        return FlowBuilder<Flow>("flow1")
-                .start(stepBuilderFactory!!.get("step1").tasklet(tasklet()).build()).build()
+    open fun startStep(): Step {
+        return stepBuilderFactory!!.get("startStep").tasklet { contribution, chunkContext ->
+            println("This is the start tasklet")
+            RepeatStatus.FINISHED
+        }.build()
     }
 
     @Bean
-    open fun flow2(): Flow {
-        return FlowBuilder<Flow>("flow2")
-                .start(stepBuilderFactory!!.get("step2").tasklet(tasklet()).build())
-                .next(stepBuilderFactory!!.get("step3").tasklet(tasklet()).build())
-                .build()
+    open fun evenStep(): Step {
+        return stepBuilderFactory!!.get("evenStep").tasklet { _, _ ->
+            println("This is the even tasklet")
+            RepeatStatus.FINISHED
+        }.build()
+    }
+
+    @Bean
+    open fun oddStep(): Step {
+        return stepBuilderFactory!!.get("oddStep").tasklet { _, _ ->
+            println("This is the odd step")
+            RepeatStatus.FINISHED
+        }.build()
+    }
+
+    @Bean
+    open fun decider(): JobExecutionDecider {
+        return OddDecider()
     }
 
     @Bean
     open fun job(): Job {
-        val flow1: Flow? = flow1()
-        val flow2: Flow? = flow2()
-
         return jobBuilderFactory!!.get("job")
-                .start(flow1)
-                .split(SimpleAsyncTaskExecutor()).add(flow2)
-                .end()
-                .build()
-    }
-
-    class CountingTasklet : Tasklet {
-        override fun execute(contribution: StepContribution?, chunkContext: ChunkContext?): RepeatStatus {
-            println(String.format("%s has been executed on thread %s",
-                    chunkContext!!.stepContext!!.stepName, Thread.currentThread().name))
-            return RepeatStatus.FINISHED
-        }
+                .start(startStep())
+                .next(decider())
+                .from(decider()).on("ODD").to(oddStep())
+                .from(decider()).on("EVEN").to(evenStep())
+                .from(oddStep()).on("*").to(decider())
+                .from(decider()).on("ODD").to(oddStep())
+                .from(decider()).on("EVEN").to(evenStep())
+                .end().build()
     }
 }
