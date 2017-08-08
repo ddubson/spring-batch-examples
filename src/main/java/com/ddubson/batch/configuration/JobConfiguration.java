@@ -1,20 +1,17 @@
 package com.ddubson.batch.configuration;
 
-import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
-import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.builder.FlowBuilder;
+import org.springframework.batch.core.job.flow.Flow;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableBatchProcessing
 public class JobConfiguration {
-    @Autowired
-    JobBuilderFactory jobBuilderFactory;
 
     @Autowired
     StepBuilderFactory stepBuilderFactory;
@@ -38,20 +35,14 @@ public class JobConfiguration {
     }
 
     @Bean
-    public Step step3() {
-        return stepBuilderFactory.get("step3")
-                .tasklet((contribution, chunkContext) -> {
-                    System.out.println(">> Step 3");
-                    return RepeatStatus.FINISHED;
-                }).build();
-    }
+    public Flow transitionJobNext() {
+        FlowBuilder<Flow> flowBuilder = new FlowBuilder<>("foo");
 
-    @Bean
-    public Job transitionJobNext() {
-        return jobBuilderFactory.get("transitionJobNext")
+        flowBuilder
                 .start(step1())
                 .next(step2())
-                .next(step3())
-                .build();
+                .end();
+
+        return flowBuilder.build();
     }
 }
