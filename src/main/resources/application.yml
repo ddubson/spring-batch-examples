@@ -1,10 +1,10 @@
 spring:
   main:
     banner-mode: "off"
-  datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/batch_job_repository
-    username: root
+  #datasource:
+    #driver-class-name: com.mysql.jdbc.Driver
+    #url: jdbc:mysql://localhost:3306/batch_job_repository
+    #username: root
 logging:
   level:
     root: WARN
