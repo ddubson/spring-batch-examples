@@ -1,3 +1,13 @@
+buildscript {
+    ext.kotlin_version = '1.1.3-2'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
 plugins {
     id 'org.springframework.boot' version '1.5.6.RELEASE'
 }
@@ -12,6 +22,7 @@ repositories {
 
 
 apply plugin: 'java'
+apply plugin: 'kotlin'
 apply plugin: 'application'
 apply plugin: 'org.springframework.boot'
 
@@ -20,9 +31,21 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-batch:$springBootVersion"
     compile "mysql:mysql-connector-java:5.1.43"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
 
     // in-memory job repository
     //compile 'com.h2database:h2:1.4.196'
 }
 
 mainClassName = "com.ddubson.batch.Application"
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
