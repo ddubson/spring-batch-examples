@@ -18,3 +18,4 @@ This project is based on
 - `08-stateless-item-reader-chunk-job` - read items in chunks from a list
 - `09-reading-from-db` - read items in chunks from database
 - `10-reading-from-fs` - read items in chunks from file system (csv format)
+- `11-reading-from-xml` - read items in chunks from XML file

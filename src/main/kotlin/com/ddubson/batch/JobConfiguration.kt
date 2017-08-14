@@ -6,31 +6,25 @@ import org.springframework.batch.core.Step
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
 import org.springframework.batch.item.ItemWriter
-import org.springframework.batch.item.file.FlatFileItemReader
-import org.springframework.batch.item.file.mapping.DefaultLineMapper
-import org.springframework.batch.item.file.transform.DelimitedLineTokenizer
+import org.springframework.batch.item.xml.StaxEventItemReader
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.ClassPathResource
+import org.springframework.oxm.xstream.XStreamMarshaller
 
 @Configuration
 class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
                        val stepBuilderFactory: StepBuilderFactory) {
     @Bean
-    fun customerItemReader(): FlatFileItemReader<Customer> {
-        val reader = FlatFileItemReader<Customer>()
-        reader.setLinesToSkip(1)
-        reader.setResource(ClassPathResource("/customer.csv"))
+    fun customerItemReader(): StaxEventItemReader<Customer> {
+        val unmarshaller = XStreamMarshaller()
+        val map = mutableMapOf<String, Class<Customer>>(Pair("customer", Customer::class.java))
+        unmarshaller.setAliases(map)
 
-        val customerLineMapper = DefaultLineMapper<Customer>()
-        val tokenizer = DelimitedLineTokenizer()
-        tokenizer.setNames(arrayOf("id", "firstName", "lastName", "birthdate"))
-
-        customerLineMapper.setLineTokenizer(tokenizer)
-        customerLineMapper.setFieldSetMapper(CustomerFieldSetMapper())
-        customerLineMapper.afterPropertiesSet()
-
-        reader.setLineMapper(customerLineMapper)
+        val reader = StaxEventItemReader<Customer>()
+        reader.setResource(ClassPathResource("/customer.xml"))
+        reader.setFragmentRootElementName("customer")
+        reader.setUnmarshaller(unmarshaller)
 
         return reader
     }
