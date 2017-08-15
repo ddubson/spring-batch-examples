@@ -19,3 +19,4 @@ This project is based on
 - `09-reading-from-db` - read items in chunks from database
 - `10-reading-from-fs` - read items in chunks from file system (csv format)
 - `11-reading-from-xml` - read items in chunks from XML file
+- `12-reading-from-multiple-fs` - read items in chunks from multiple files in FS
