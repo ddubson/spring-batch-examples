@@ -1,19 +1,20 @@
 package com.ddubson.batch
 
 import com.ddubson.batch.domain.Customer
-import com.ddubson.batch.domain.CustomerFieldSetMapper
+import com.ddubson.batch.domain.CustomerRowMapper
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.Step
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
-import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider
-import org.springframework.batch.item.database.JdbcBatchItemWriter
-import org.springframework.batch.item.file.FlatFileItemReader
-import org.springframework.batch.item.file.mapping.DefaultLineMapper
-import org.springframework.batch.item.file.transform.DelimitedLineTokenizer
+import org.springframework.batch.item.database.JdbcPagingItemReader
+import org.springframework.batch.item.database.Order
+import org.springframework.batch.item.database.support.MySqlPagingQueryProvider
+import org.springframework.batch.item.file.FlatFileItemWriter
+import org.springframework.batch.item.file.transform.PassThroughLineAggregator
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.io.ClassPathResource
+import org.springframework.core.io.FileSystemResource
+import java.io.File
 import javax.sql.DataSource
 
 @Configuration
@@ -21,34 +22,34 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
                        val stepBuilderFactory: StepBuilderFactory,
                        val dataSource: DataSource) {
     @Bean
-    fun itemReader(): FlatFileItemReader<Customer> {
-        val reader = FlatFileItemReader<Customer>()
-        reader.setLinesToSkip(1)
-        reader.setResource(ClassPathResource("/customer.csv"))
+    fun itemReader(): JdbcPagingItemReader<Customer> {
+        val reader = JdbcPagingItemReader<Customer>()
 
-        val customerLineMapper = DefaultLineMapper<Customer>()
-        val tokenizer = DelimitedLineTokenizer()
-        tokenizer.setNames(arrayOf("id", "firstName", "lastName", "birthdate"))
+        reader.setDataSource(dataSource)
+        reader.setFetchSize(10)
+        reader.setRowMapper(CustomerRowMapper())
 
-        customerLineMapper.setLineTokenizer(tokenizer)
-        customerLineMapper.setFieldSetMapper(CustomerFieldSetMapper())
-        customerLineMapper.afterPropertiesSet()
+        val queryProvider = MySqlPagingQueryProvider()
+        queryProvider.setSelectClause("id, firstName, lastName, birthdate")
+        queryProvider.setFromClause("from customer")
 
-        reader.setLineMapper(customerLineMapper)
+        queryProvider.sortKeys = mapOf(Pair("id", Order.ASCENDING))
+        reader.setQueryProvider(queryProvider)
 
         return reader
     }
 
     @Bean
-    fun itemWriter(): JdbcBatchItemWriter<Customer> {
-        val itemWriter = JdbcBatchItemWriter<Customer>()
+    fun itemWriter(): FlatFileItemWriter<Customer> {
+        val writer = FlatFileItemWriter<Customer>()
+        writer.setLineAggregator(PassThroughLineAggregator<Customer>())
 
-        itemWriter.setDataSource(dataSource)
-        itemWriter.setSql("INSERT INTO CUSTOMER VALUES (:id, :firstName, :lastName, :birthdate)")
-        itemWriter.setItemSqlParameterSourceProvider(BeanPropertyItemSqlParameterSourceProvider<Customer>())
-        itemWriter.afterPropertiesSet()
+        val customerOut = File.createTempFile("customerOutput", ".out").absolutePath
+        println(">> Output path $customerOut")
+        writer.setResource(FileSystemResource(customerOut))
+        writer.afterPropertiesSet()
 
-        return itemWriter
+        return writer
     }
 
     @Bean
@@ -62,7 +63,7 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
 
     @Bean
     fun job(): Job {
-        return jobBuilderFactory.get("insertIntoDBJob")
+        return jobBuilderFactory.get("writeToFlatFileJob")
                 .start(step1())
                 .build()
     }

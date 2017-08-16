@@ -25,4 +25,5 @@ This project is based on
 ###### Writers
 
 - `14-writing-basic` - writing a basic list of ints to sysout
-- `15-writing-items-to-db` - writing items to a jdbc database source 
+- `15-writing-items-to-db` - writing items to a jdbc database source
+- `16-writing-items-to-fs` - writing items to a flat file 
