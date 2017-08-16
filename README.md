@@ -20,3 +20,4 @@ This project is based on
 - `10-reading-from-fs` - read items in chunks from file system (csv format)
 - `11-reading-from-xml` - read items in chunks from XML file
 - `12-reading-from-multiple-fs` - read items in chunks from multiple files in FS
+- `13-reading-stateful-cycle` - read items and track events during cycle in a stateful manner
