@@ -21,3 +21,7 @@ This project is based on
 - `11-reading-from-xml` - read items in chunks from XML file
 - `12-reading-from-multiple-fs` - read items in chunks from multiple files in FS
 - `13-reading-stateful-cycle` - read items and track events during cycle in a stateful manner
+
+###### Writers
+
+- `14-writing-basic` - writing a basic list of ints to sysout 

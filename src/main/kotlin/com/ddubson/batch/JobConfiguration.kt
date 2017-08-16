@@ -6,6 +6,7 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepScope
 import org.springframework.batch.item.ItemWriter
+import org.springframework.batch.item.support.ListItemReader
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -14,13 +15,14 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
                        val stepBuilderFactory: StepBuilderFactory) {
     @Bean
     @StepScope
-    fun itemReader(): StatefulItemReader {
-        return StatefulItemReader((1..100).map { i -> i.toString()})
+    fun itemReader(): ListItemReader<Int> {
+        return ListItemReader((0..100).toList())
     }
 
     @Bean
-    fun customerItemWriter(): ItemWriter<String> {
-        return ItemWriter<String> { items ->
+    fun itemWriter(): ItemWriter<Int> {
+        return ItemWriter<Int> { items ->
+            println("Writing ${items.size} items.")
             items.forEach { item -> println(">> $item") }
         }
     }
@@ -28,10 +30,9 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
     @Bean
     fun step1(): Step {
         return stepBuilderFactory.get("step1")
-                .chunk<String,String>(10)
+                .chunk<Int,Int>(10)
                 .reader(itemReader())
-                .writer(customerItemWriter())
-                .stream(itemReader())
+                .writer(itemWriter())
                 .build()
     }
 
