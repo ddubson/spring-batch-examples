@@ -1,10 +1,11 @@
 # Spring Batch examples
 
-This project is based on 
+Spring Batch framework use case examples with Kotlin
 
 ### Samples (git tags):
 
 ###### Basics
+
 - `01-basic-job` - basic multi-step job example
 - `02-first-last-flows` - flow suffixed and prefied with a step
 - `03-...`
@@ -29,3 +30,7 @@ This project is based on
 - `16-writing-items-to-fs` - writing items to a flat file
 - `17-writing-items-to-xml` - writing items to an XML file
 - `18-writing-to-multiple-files` - writing items to multiple files/formats
+
+###### Processors
+
+- `19-processing-basic` - processing an item, basic example
