@@ -41,3 +41,4 @@ Spring Batch framework use case examples with Kotlin
 ###### Error and State Handling
 
 - `23-restarting-jobs` - if job fails during processing, batch restarts from an offset
+- `24-retrying-steps` - if step fails, retry N times until working
