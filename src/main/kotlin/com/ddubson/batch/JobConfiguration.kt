@@ -2,6 +2,8 @@ package com.ddubson.batch
 
 import com.ddubson.batch.domain.Customer
 import com.ddubson.batch.domain.CustomerRowMapper
+import com.ddubson.batch.processors.FilteringItemProcessor
+import com.ddubson.batch.processors.UppercaseItemProcessor
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.Step
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
@@ -9,7 +11,7 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.item.database.JdbcPagingItemReader
 import org.springframework.batch.item.database.Order
 import org.springframework.batch.item.database.support.MySqlPagingQueryProvider
-import org.springframework.batch.item.validator.ValidatingItemProcessor
+import org.springframework.batch.item.support.CompositeItemProcessor
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import javax.sql.DataSource
@@ -37,10 +39,13 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
     }
 
     @Bean
-    fun itemProcessor(): ValidatingItemProcessor<Customer> {
-        val filter= ValidatingItemProcessor<Customer>(CustomerValidator())
-        filter.setFilter(true)
-        return filter
+    fun compositeItemProcessor(): CompositeItemProcessor<Customer, Customer> {
+        val processor = CompositeItemProcessor<Customer,Customer>()
+
+        processor.setDelegates(arrayListOf(FilteringItemProcessor(), UppercaseItemProcessor()))
+        processor.afterPropertiesSet()
+
+        return processor
     }
 
     @Bean
@@ -48,8 +53,8 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
         return stepBuilderFactory.get("step1")
                 .chunk<Customer, Customer>(10)
                 .reader(itemReader())
-                .processor(itemProcessor())
-                .writer { items -> items.forEach { i -> println("Processed: ${i.toString()}") } }
+                .processor(compositeItemProcessor())
+                .writer { items -> items.forEach { i -> println("Processed: $i") } }
                 .build()
     }
 
