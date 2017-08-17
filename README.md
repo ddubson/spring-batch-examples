@@ -34,3 +34,4 @@ Spring Batch framework use case examples with Kotlin
 ###### Processors
 
 - `19-processing-basic` - processing an item, basic example
+- `20-processing-filtering` - processing an item, filtering items

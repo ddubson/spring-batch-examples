@@ -36,8 +36,8 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
     }
 
     @Bean
-    fun itemProcessor(): UppercaseItemProcessor {
-        return UppercaseItemProcessor()
+    fun itemProcessor(): FilteringItemProcessor {
+        return FilteringItemProcessor()
     }
 
     @Bean
@@ -52,7 +52,7 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
 
     @Bean
     fun job(): Job {
-        return jobBuilderFactory.get("writeToMultipleFiles")
+        return jobBuilderFactory.get("job")
                 .start(step1())
                 .build()
     }
