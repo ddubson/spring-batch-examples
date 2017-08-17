@@ -37,3 +37,7 @@ Spring Batch framework use case examples with Kotlin
 - `20-processing-filtering` - processing an item, filtering items
 - `21-processing-validating` - processsing an item, validating and filtering
 - `22-processing-chaining` - processing an item, chaining processors
+
+###### Error and State Handling
+
+- `23-restarting-jobs` - if job fails during processing, batch restarts from an offset
