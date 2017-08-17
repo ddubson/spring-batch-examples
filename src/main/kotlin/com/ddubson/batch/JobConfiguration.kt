@@ -9,6 +9,7 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.item.database.JdbcPagingItemReader
 import org.springframework.batch.item.database.Order
 import org.springframework.batch.item.database.support.MySqlPagingQueryProvider
+import org.springframework.batch.item.validator.ValidatingItemProcessor
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import javax.sql.DataSource
@@ -36,8 +37,10 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
     }
 
     @Bean
-    fun itemProcessor(): FilteringItemProcessor {
-        return FilteringItemProcessor()
+    fun itemProcessor(): ValidatingItemProcessor<Customer> {
+        val filter= ValidatingItemProcessor<Customer>(CustomerValidator())
+        filter.setFilter(true)
+        return filter
     }
 
     @Bean
