@@ -9,11 +9,11 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.item.database.JdbcPagingItemReader
 import org.springframework.batch.item.database.Order
 import org.springframework.batch.item.database.support.MySqlPagingQueryProvider
-import org.springframework.batch.item.file.FlatFileItemWriter
-import org.springframework.batch.item.file.transform.PassThroughLineAggregator
+import org.springframework.batch.item.xml.StaxEventItemWriter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.FileSystemResource
+import org.springframework.oxm.xstream.XStreamMarshaller
 import java.io.File
 import javax.sql.DataSource
 
@@ -40,13 +40,17 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
     }
 
     @Bean
-    fun itemWriter(): FlatFileItemWriter<Customer> {
-        val writer = FlatFileItemWriter<Customer>()
-        writer.setLineAggregator(PassThroughLineAggregator<Customer>())
+    fun itemWriter(): StaxEventItemWriter<Customer> {
+        val marshaller = XStreamMarshaller()
+        marshaller.setAliases(mapOf(Pair("customer", Customer::class.java)))
 
-        val customerOut = File.createTempFile("customerOutput", ".out").absolutePath
-        println(">> Output path $customerOut")
-        writer.setResource(FileSystemResource(customerOut))
+        val writer = StaxEventItemWriter<Customer>()
+        writer.rootTagName = "customers"
+        writer.setMarshaller(marshaller)
+
+        val outputPath = File.createTempFile("customerOutput", ".xml").absolutePath
+        println(">> Output path: " + outputPath)
+        writer.setResource(FileSystemResource(outputPath))
         writer.afterPropertiesSet()
 
         return writer
@@ -63,7 +67,7 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
 
     @Bean
     fun job(): Job {
-        return jobBuilderFactory.get("writeToFlatFileJob")
+        return jobBuilderFactory.get("writeToXMLFile")
                 .start(step1())
                 .build()
     }
