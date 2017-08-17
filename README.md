@@ -28,3 +28,4 @@ This project is based on
 - `15-writing-items-to-db` - writing items to a jdbc database source
 - `16-writing-items-to-fs` - writing items to a flat file
 - `17-writing-items-to-xml` - writing items to an XML file
+- `18-writing-to-multiple-files` - writing items to multiple files/formats

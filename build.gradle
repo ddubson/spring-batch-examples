@@ -25,6 +25,7 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-batch:$springBootVersion"
+    compile "com.fasterxml.jackson.core:jackson-databind:2.8.9"
     compile "mysql:mysql-connector-java:5.1.43"
 
     // in-memory job repository
