@@ -2,7 +2,7 @@ buildscript {
     ext.springBootVersion = "1.5.6.RELEASE"
     ext.springVersion = "4.3.10.RELEASE"
     ext.springBatchVersion = "3.0.8.RELEASE"
-    ext.kotlinVersion = '1.1.4'
+    ext.kotlinVersion = '1.1.4-2'
 
     repositories { mavenCentral() }
 

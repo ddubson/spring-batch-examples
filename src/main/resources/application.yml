@@ -10,4 +10,4 @@ spring:
 logging:
   level:
     root: WARN
-    org.springframework.batch: WARN
+    org.springframework.batch: DEBUG

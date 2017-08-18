@@ -57,4 +57,9 @@ java -jar -Dspring.profiles.active=slave build/libs/spring-batch-examples.jar -m
 java -jar -Dspring.profiles.active=master build/libs/spring-batch-examples.jar -minValue=1 -maxValue=100000
 ```
 
-- 
+- `31-remote-chunking` - Split process chunks into remote JVMs (RabbitMQ)
+```
+./gradlew clean build
+java -jar -Dspring.profiles.active=slave build/libs/spring-batch-examples.jar
+java -jar -Dspring.profiles.active=master build/libs/spring-batch-examples.jar
+```
