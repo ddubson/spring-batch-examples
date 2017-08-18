@@ -1,60 +1,83 @@
 package com.ddubson.batch
 
+import com.ddubson.batch.domain.Customer
+import com.ddubson.batch.domain.CustomerRowMapper
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.Step
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepScope
-import org.springframework.batch.integration.async.AsyncItemProcessor
-import org.springframework.batch.integration.async.AsyncItemWriter
-import org.springframework.batch.item.ItemProcessor
-import org.springframework.batch.item.ItemWriter
-import org.springframework.batch.item.support.ListItemReader
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider
+import org.springframework.batch.item.database.JdbcBatchItemWriter
+import org.springframework.batch.item.database.JdbcPagingItemReader
+import org.springframework.batch.item.database.Order
+import org.springframework.batch.item.database.support.MySqlPagingQueryProvider
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
+import javax.sql.DataSource
 
 @Configuration
 class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
-                       val stepBuilderFactory: StepBuilderFactory) {
+                       val stepBuilderFactory: StepBuilderFactory,
+                       val dataSource: DataSource) {
+    private val customerTableName = "customer"
+    private val newCustomerTableName = "new_customer"
+
+    @Bean
+    fun partitioner(): ColumnRangePartitioner {
+        return ColumnRangePartitioner("id", customerTableName, dataSource)
+    }
+
     @Bean
     @StepScope
-    fun reader(): ListItemReader<String> {
-        return ListItemReader((0..100).map { i -> i.toString() })
+    fun pagingItemReader(@Value("#{stepExecutionContext['minValue']}") minValue: Long,
+                         @Value("#{stepExecutionContext['maxValue']}") maxValue: Long): JdbcPagingItemReader<Customer> {
+        println("Reading $minValue to $maxValue")
+        val reader = JdbcPagingItemReader<Customer>()
+        reader.setDataSource(dataSource)
+        reader.setFetchSize(1000)
+        reader.setRowMapper(CustomerRowMapper())
+
+        val queryProv = MySqlPagingQueryProvider()
+        queryProv.setSelectClause("id, firstName, lastName, birthdate")
+        queryProv.setFromClause("from $customerTableName")
+        queryProv.setWhereClause("where id >= $minValue and id < $maxValue")
+        queryProv.sortKeys = mapOf(Pair("id", Order.ASCENDING))
+
+        reader.setQueryProvider(queryProv)
+        return reader
     }
 
     @Bean
-    fun itemProcessor(): ItemProcessor<String, String> {
-        return ItemProcessor { item ->
-            Thread.sleep(1000)
-            println("[${Thread.currentThread().name}]:: Processing $item.")
-            item.toUpperCase()
-        }
+    fun itemWriter(): JdbcBatchItemWriter<Customer> {
+        val writer = JdbcBatchItemWriter<Customer>()
+        writer.setDataSource(dataSource)
+        writer.setSql("INSERT INTO $newCustomerTableName VALUES (:id, :firstName, :lastName, :birthdate);")
+        writer.setItemSqlParameterSourceProvider(BeanPropertyItemSqlParameterSourceProvider())
+        writer.afterPropertiesSet()
+
+        return writer
     }
 
     @Bean
-    fun asyncItemProcessor(): AsyncItemProcessor<String, String> {
-        val asyncProc= AsyncItemProcessor<String, String>()
-        asyncProc.setDelegate(itemProcessor())
-        asyncProc.setTaskExecutor(taskExecutor())
-        asyncProc.afterPropertiesSet()
-
-        return asyncProc
+    fun slaveStep(): Step {
+        return stepBuilderFactory.get("slaveStep")
+                .chunk<Customer,Customer>(10)
+                .reader(pagingItemReader(0,1))
+                .writer(itemWriter())
+                .build()
     }
 
     @Bean
-    fun itemWriter(): ItemWriter<String> {
-        return ItemWriter { items ->
-            items.forEach { i -> println("[${Thread.currentThread().name}]:: Writing $i.") }
-        }
-    }
-
-    @Bean
-    fun asyncItemWriter(): AsyncItemWriter<String> {
-        val asyncWriter = AsyncItemWriter<String>()
-        asyncWriter.setDelegate(itemWriter())
-        asyncWriter.afterPropertiesSet()
-        return asyncWriter
+    fun masterStep(): Step {
+        return stepBuilderFactory.get("masterStep")
+                .partitioner(slaveStep().name, partitioner())
+                .step(slaveStep())
+                .gridSize(4)
+                .taskExecutor(taskExecutor())
+                .build()
     }
 
     @Bean
@@ -67,19 +90,9 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
     }
 
     @Bean
-    fun step1(): Step {
-        return stepBuilderFactory.get("step1")
-                .chunk<String, String>(10)
-                .reader(reader())
-                .processor(asyncItemProcessor() as ItemProcessor<in String, out String>)
-                .writer(asyncItemWriter() as ItemWriter<in String>)
-                .build()
-    }
-
-    @Bean
     fun job(): Job {
         return jobBuilderFactory.get("job")
-                .start(step1())
+                .start(masterStep())
                 .build()
     }
 }
