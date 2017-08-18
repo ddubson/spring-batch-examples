@@ -21,17 +21,17 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
 
     @Bean
     @StepScope
-    fun processor(@Value("#{jobParameters['retry']}") retry: String?): RetryItemProcessor {
-        val proc = RetryItemProcessor()
-        proc.retry = !retry.isNullOrBlank() && retry!!.contentEquals("processor")
+    fun processor(@Value("#{jobParameters['skip']}") skip: String?): SkipItemProcessor {
+        val proc = SkipItemProcessor()
+        proc.skip = !skip.isNullOrBlank() && skip!!.contains(skip) && skip.contentEquals("processor")
         return proc
     }
 
     @Bean
     @StepScope
-    fun writer(@Value("#{jobParameters['retry']}") retry: String?): RetryItemWriter {
-        val writer = RetryItemWriter()
-        writer.retry = !retry.isNullOrBlank() && retry!!.contentEquals("writer")
+    fun writer(@Value("#{jobParameters['skip']}") skip: String?): SkipItemWriter {
+        val writer = SkipItemWriter()
+        writer.skip = !skip.isNullOrBlank() && skip!!.contains(skip) && skip.contentEquals("writer")
         return writer
     }
 
@@ -40,11 +40,11 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
         return stepBuilderFactory.get("step1")
                 .chunk<String, String>(10)
                 .reader(reader())
-                .processor(processor("processor"))
-                .writer(writer("writer"))
+                .processor(processor(""))
+                .writer(writer(""))
                 .faultTolerant()
-                .retry(CustomRetryableException::class.java)
-                .retryLimit(15)
+                .skip(CustomRetryableException::class.java)
+                .skipLimit(15)
                 .build()
     }
 
