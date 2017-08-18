@@ -8,6 +8,7 @@ import org.springframework.batch.core.configuration.annotation.StepScope
 import org.springframework.batch.item.support.ListItemReader
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 
 @Configuration
 class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
@@ -19,24 +20,28 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
     }
 
     @Bean
-    @StepScope
-    fun processor(): SkipItemProcessor = SkipItemProcessor()
-
-    @Bean
-    @StepScope
-    fun writer(): SkipItemWriter = SkipItemWriter()
+    fun taskExecutor():ThreadPoolTaskExecutor {
+        val exec = ThreadPoolTaskExecutor()
+        exec.corePoolSize = 5
+        exec.maxPoolSize = 10
+        exec.threadNamePrefix = "dimas-thread-"
+        return exec
+    }
 
     @Bean
     fun step1(): Step {
         return stepBuilderFactory.get("step1")
                 .chunk<String, String>(10)
                 .reader(reader())
-                .processor(processor())
-                .writer(writer())
+                .processor { item ->
+                    println("[${Thread.currentThread().name}]:: Processing $item.")
+                    item.toUpperCase()
+                }
+                .writer{ items ->
+                    items.forEach { i -> println("[${Thread.currentThread().name}]:: Writing $i.") }
+                }
                 .faultTolerant()
-                .skip(CustomException::class.java)
-                .skipLimit(15)
-                .listener(CustomSkipListener())
+                .taskExecutor(taskExecutor())
                 .build()
     }
 

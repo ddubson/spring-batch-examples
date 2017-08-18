@@ -44,3 +44,8 @@ Spring Batch framework use case examples with Kotlin
 - `24-retrying-steps` - if step fails, retry N times until working
 - `25-skipping-steps` - if step fails, skip the step that failed
 - `26-listen-on-skips` - attach listeners to items that are skipped
+
+###### Scaling Batch
+
+- `27-multi-thread-step` - Multi-threaded step (each chunk is processed in its own thread)
+* AsyncItemProcessor - itemprocessor returns a Future, itemwriter unwraps resolved Future
