@@ -1,6 +1,7 @@
 buildscript {
     ext.springBootVersion = "1.5.6.RELEASE"
     ext.springVersion = "4.3.10.RELEASE"
+    ext.springBatchVersion = "3.0.8.RELEASE"
     ext.kotlinVersion = '1.1.4'
 
     repositories { mavenCentral() }
@@ -21,10 +22,13 @@ apply plugin: 'org.springframework.boot'
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlinVersion"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+
     compile "org.springframework:spring-oxm:$springVersion"
     compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
-    compile "org.springframework.boot:spring-boot-starter-batch:$springBootVersion"
+
+    compile "org.springframework.batch:spring-batch-core:$springBatchVersion"
+    compile "org.springframework.batch:spring-batch-integration:$springBatchVersion"
     compile "com.fasterxml.jackson.core:jackson-databind:2.8.9"
     //compile "mysql:mysql-connector-java:5.1.43"
 

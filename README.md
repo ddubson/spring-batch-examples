@@ -48,4 +48,4 @@ Spring Batch framework use case examples with Kotlin
 ###### Scaling Batch
 
 - `27-multi-thread-step` - Multi-threaded step (each chunk is processed in its own thread)
-* AsyncItemProcessor - itemprocessor returns a Future, itemwriter unwraps resolved Future
+- `28-async-processors` - AsyncItemProcessor - itemprocessor returns a Future, itemwriter unwraps resolved Future
