@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS `customer` (
   `birthDate` VARCHAR (255)
 ) AUTO_INCREMENT=1;
 
-CREATE TABLE `new_customer` (
+CREATE TABLE IF NOT EXISTS `new_customer` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `firstName` varchar(255) default NULL,
   `lastName` varchar(255) default NULL,

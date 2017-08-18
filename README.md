@@ -50,3 +50,11 @@ Spring Batch framework use case examples with Kotlin
 - `27-multi-thread-step` - Multi-threaded step (each chunk is processed in its own thread)
 - `28-async-processors` - AsyncItemProcessor - itemprocessor returns a Future, itemwriter unwraps resolved Future
 - `29-local-partitioner` - Split step into 4 batches and process in a grid of 4
+- `30-remote-partitioner` - Split step into multiple remote jvm's passing commands over RabbitMQ and channels
+```
+./gradlew clean build
+java -jar -Dspring.profiles.active=slave build/libs/spring-batch-examples.jar -minValue=1 -maxValue=100000
+java -jar -Dspring.profiles.active=master build/libs/spring-batch-examples.jar -minValue=1 -maxValue=100000
+```
+
+- 
