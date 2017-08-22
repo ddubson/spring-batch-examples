@@ -1,50 +1,86 @@
 package com.ddubson.batch
 
+import org.springframework.batch.core.ChunkListener
 import org.springframework.batch.core.Job
-import org.springframework.batch.core.configuration.JobRegistry
+import org.springframework.batch.core.JobExecutionListener
+import org.springframework.batch.core.Step
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
-import org.springframework.batch.core.configuration.annotation.StepScope
-import org.springframework.batch.core.launch.JobLauncher
-import org.springframework.batch.core.launch.support.RunIdIncrementer
-import org.springframework.batch.core.step.tasklet.Tasklet
-import org.springframework.batch.integration.launch.JobLaunchingMessageHandler
-import org.springframework.batch.repeat.RepeatStatus
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.batch.item.ItemWriter
+import org.springframework.batch.item.support.ListItemReader
+import org.springframework.context.ApplicationContext
+import org.springframework.context.ApplicationContextAware
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.integration.annotation.ServiceActivator
 import org.springframework.integration.channel.DirectChannel
+import org.springframework.integration.gateway.GatewayProxyFactoryBean
+import org.springframework.integration.stream.CharacterStreamWritingMessageHandler
 
 @Configuration
 class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
-                       val stepBuilderFactory: StepBuilderFactory,
-                       val jobRegistry: JobRegistry,
-                       val jobLauncher: JobLauncher) {
-    @Bean
-    @ServiceActivator(inputChannel = "requests", outputChannel = "replies")
-    fun jobLaunchingMessageHandler(): JobLaunchingMessageHandler = JobLaunchingMessageHandler(jobLauncher)
+                       val stepBuilderFactory: StepBuilderFactory) : ApplicationContextAware {
+    private lateinit var applicationContext: ApplicationContext
 
     @Bean
-    fun requests(): DirectChannel = DirectChannel()
+    fun itemReader(): ListItemReader<String> {
+        return ListItemReader((0..1000).map { i -> i.toString() })
+    }
 
     @Bean
-    fun replies(): DirectChannel = DirectChannel()
-
-    @Bean
-    @StepScope
-    fun tasklet(@Value("#{jobParameters['name']}") name: String?): Tasklet {
-        return Tasklet { _, _ ->
-            println("The job ran for $name")
-            RepeatStatus.FINISHED
+    fun itemWriter(): ItemWriter<String> {
+        return ItemWriter { items ->
+            items.forEach { it -> println(">> $it") }
         }
+    }
+
+    @Bean
+    fun jobExecutionListener(): Any {
+        return proxyFactoryBean(JobExecutionListener::class.java)
+    }
+
+    @Bean
+    fun chunkListener(): Any {
+        return proxyFactoryBean(ChunkListener::class.java)
+    }
+
+    @Bean
+    fun events(): DirectChannel {
+        return DirectChannel()
+    }
+
+    @Bean
+    @ServiceActivator(inputChannel = "events")
+    fun logger(): CharacterStreamWritingMessageHandler {
+        return CharacterStreamWritingMessageHandler.stdout()
+    }
+
+    @Bean
+    fun step1(): Step {
+        return stepBuilderFactory.get("step1")
+                .chunk<String, String>(100)
+                .reader(itemReader())
+                .writer(itemWriter())
+                .listener(chunkListener() as ChunkListener)
+                .build()
     }
 
     @Bean
     fun job(): Job {
         return jobBuilderFactory.get("job")
-                .incrementer(RunIdIncrementer())
-                .start(stepBuilderFactory.get("step1").tasklet(tasklet(null)).build())
+                .start(step1())
+                .listener(jobExecutionListener() as JobExecutionListener)
                 .build()
+    }
+
+    override fun setApplicationContext(applicationContext: ApplicationContext) {
+        this.applicationContext = applicationContext
+    }
+
+    private fun proxyFactoryBean(cls: Class<*>): Any {
+        val proxyFactoryBean = GatewayProxyFactoryBean(cls)
+        proxyFactoryBean.setDefaultRequestChannel(events())
+        proxyFactoryBean.setBeanFactory(applicationContext)
+        return proxyFactoryBean.`object`
     }
 }

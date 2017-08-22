@@ -26,11 +26,13 @@ dependencies {
     compile "org.springframework:spring-oxm:$springVersion"
     compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    compile "org.springframework.boot:spring-boot-starter-integration:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
 
     compile "org.springframework.batch:spring-batch-core:$springBatchVersion"
     compile "org.springframework.batch:spring-batch-integration:$springBatchVersion"
     compile "org.springframework.integration:spring-integration-amqp:$springVersion"
+    compile "org.springframework.integration:spring-integration-stream:$springVersion"
 
     compile "com.fasterxml.jackson.core:jackson-databind:2.8.9"
     //compile "mysql:mysql-connector-java:5.1.43"
