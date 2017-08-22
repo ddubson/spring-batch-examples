@@ -68,3 +68,4 @@ java -jar -Dspring.profiles.active=master build/libs/spring-batch-examples.jar
 
 - `32-starting-a-job` - Starting a job via HTTP endpoint
 - `33-stopping-a-job` - Stopping a job via HTTP endpoint
+- `34-scheduling-a-job` - Scheduling a job via Spring scheduler

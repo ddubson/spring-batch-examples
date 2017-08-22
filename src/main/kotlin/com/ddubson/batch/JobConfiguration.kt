@@ -10,16 +10,18 @@ import org.springframework.batch.core.configuration.support.JobRegistryBeanPostP
 import org.springframework.batch.core.converter.DefaultJobParametersConverter
 import org.springframework.batch.core.launch.JobLauncher
 import org.springframework.batch.core.launch.JobOperator
+import org.springframework.batch.core.launch.support.RunIdIncrementer
 import org.springframework.batch.core.launch.support.SimpleJobLauncher
 import org.springframework.batch.core.launch.support.SimpleJobOperator
 import org.springframework.batch.core.step.tasklet.Tasklet
 import org.springframework.batch.repeat.RepeatStatus
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.task.SimpleAsyncTaskExecutor
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Configuration
 class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
@@ -55,20 +57,19 @@ class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
 
     @Bean
     @StepScope
-    fun tasklet(@Value("#{jobParameters['name']}") name: String?): Tasklet {
-        val realName = if(name.isNullOrBlank()) { "no-name-provided" } else { name }
-
+    fun tasklet(): Tasklet {
         return Tasklet { _, _->
-            println(">> $realName is sleeping again...")
-            Thread.sleep(1000)
-            RepeatStatus.CONTINUABLE
+            val formatter = SimpleDateFormat("hh:mm:ss")
+            println(">> I was run at ${formatter.format(Date())}")
+            RepeatStatus.FINISHED
         }
     }
 
     @Bean
     fun job(): Job {
         return jobBuilderFactory.get("job")
-                .start(stepBuilderFactory.get("step1").tasklet(tasklet(null)).build())
+                .incrementer(RunIdIncrementer())
+                .start(stepBuilderFactory.get("step1").tasklet(tasklet()).build())
                 .build()
     }
 
