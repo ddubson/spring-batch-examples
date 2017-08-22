@@ -63,3 +63,7 @@ java -jar -Dspring.profiles.active=master build/libs/spring-batch-examples.jar -
 java -jar -Dspring.profiles.active=slave build/libs/spring-batch-examples.jar
 java -jar -Dspring.profiles.active=master build/libs/spring-batch-examples.jar
 ```
+
+###### Controlling Jobs
+
+- `32-starting-a-job` - Starting a job via HTTP endpoint

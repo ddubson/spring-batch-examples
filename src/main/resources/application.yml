@@ -1,13 +1,18 @@
 spring:
   main:
     banner-mode: "off"
-  datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/batch_job_repository
-    username: root
-    data: /data-mysql.sql
-    schema: /schema-mysql.sql
+  batch:
+    job:
+      enabled: false
+  #datasource:
+  #  driver-class-name: com.mysql.jdbc.Driver
+  #  url: jdbc:mysql://localhost:3306/batch_job_repository
+  #  username: root
+  #  data: /data-mysql.sql
+  #  schema: /schema-mysql.sql
 logging:
   level:
     root: WARN
-    org.springframework.batch: DEBUG
+    org.springframework.batch: WARN
+
+

@@ -1,92 +1,75 @@
 package com.ddubson.batch
 
-import com.ddubson.batch.domain.Customer
-import com.ddubson.batch.domain.CustomerRowMapper
 import org.springframework.batch.core.Job
+import org.springframework.batch.core.configuration.JobRegistry
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
-import org.springframework.batch.core.step.tasklet.TaskletStep
-import org.springframework.batch.item.ItemProcessor
-import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider
-import org.springframework.batch.item.database.JdbcBatchItemWriter
-import org.springframework.batch.item.database.JdbcPagingItemReader
-import org.springframework.batch.item.database.Order
-import org.springframework.batch.item.database.support.MySqlPagingQueryProvider
+import org.springframework.batch.core.configuration.annotation.StepScope
+import org.springframework.batch.core.configuration.support.JobRegistryBeanPostProcessor
+import org.springframework.batch.core.converter.DefaultJobParametersConverter
+import org.springframework.batch.core.explore.JobExplorer
+import org.springframework.batch.core.launch.JobLauncher
+import org.springframework.batch.core.launch.JobOperator
+import org.springframework.batch.core.launch.support.SimpleJobOperator
+import org.springframework.batch.core.repository.JobRepository
+import org.springframework.batch.core.step.tasklet.Tasklet
+import org.springframework.batch.repeat.RepeatStatus
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.ApplicationContext
+import org.springframework.context.ApplicationContextAware
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
-import javax.sql.DataSource
 
 @Configuration
 class JobConfiguration(val jobBuilderFactory: JobBuilderFactory,
                        val stepBuilderFactory: StepBuilderFactory,
-                       val dataSource: DataSource) {
-    private val customerTableName = "customer"
-    private val newCustomerTableName = "new_customer"
+                       val jobExplorer: JobExplorer,
+                       val jobLauncher: JobLauncher,
+                       val jobRepository: JobRepository,
+                       val jobRegistry: JobRegistry): ApplicationContextAware {
+    private lateinit var applicationContext: ApplicationContext
 
-    @Bean
-    fun pagingItemReader(): JdbcPagingItemReader<Customer> {
-        val reader = JdbcPagingItemReader<Customer>()
-        reader.setDataSource(dataSource)
-        reader.setFetchSize(1000)
-        reader.setRowMapper(CustomerRowMapper())
-
-        val queryProv = MySqlPagingQueryProvider()
-        queryProv.setSelectClause("id, firstName, lastName, birthdate")
-        queryProv.setFromClause("from $customerTableName")
-        queryProv.sortKeys = mapOf(Pair("id", Order.ASCENDING))
-
-        reader.setQueryProvider(queryProv)
-        return reader
+    override fun setApplicationContext(applicationContext: ApplicationContext) {
+      this.applicationContext = applicationContext
     }
 
     @Bean
-    fun itemProcessor(): ItemProcessor<Customer, Customer> {
-        return ItemProcessor { item ->
-            Customer(item.id,
-                    item.firstName.toUpperCase(),
-                    item.lastName.toUpperCase(),
-                    item.birthdate)
+    fun jobRegistrar(): JobRegistryBeanPostProcessor {
+        val registrar = JobRegistryBeanPostProcessor()
+        registrar.setJobRegistry(jobRegistry)
+        registrar.setBeanFactory(applicationContext.autowireCapableBeanFactory)
+        registrar.afterPropertiesSet()
+        return registrar
+    }
+
+    @Bean
+    fun jobOperator(): JobOperator {
+        val jobOperator = SimpleJobOperator()
+        jobOperator.setJobLauncher(jobLauncher)
+        jobOperator.setJobParametersConverter(DefaultJobParametersConverter())
+        jobOperator.setJobRegistry(jobRegistry)
+        jobOperator.setJobExplorer(jobExplorer)
+        jobOperator.setJobRepository(jobRepository)
+        jobOperator.afterPropertiesSet()
+
+        return jobOperator
+    }
+
+    @Bean
+    @StepScope
+    fun tasklet(@Value("#{jobParameters['name']}") name: String?): Tasklet {
+        val realName = if(name.isNullOrBlank()) { "no-name-provided" } else { name }
+
+        return Tasklet { _, _->
+            println("The job ran for $realName")
+            RepeatStatus.FINISHED
         }
     }
 
     @Bean
-    fun customerItemWriter(): JdbcBatchItemWriter<Customer> {
-        val writer = JdbcBatchItemWriter<Customer>()
-        writer.setDataSource(dataSource)
-        writer.setSql("INSERT INTO $newCustomerTableName VALUES (:id, :firstName, :lastName, :birthdate);")
-        writer.setItemSqlParameterSourceProvider(BeanPropertyItemSqlParameterSourceProvider())
-        writer.afterPropertiesSet()
-
-        return writer
-    }
-
-    @Bean
-    fun taskExecutor(): ThreadPoolTaskExecutor {
-        val exec = ThreadPoolTaskExecutor()
-        exec.corePoolSize = 5
-        exec.maxPoolSize = 10
-        exec.threadNamePrefix = "dimas-thread-"
-        return exec
-    }
-
-    @Bean
-    fun step(): TaskletStep {
-        return stepBuilderFactory.get("step1")
-                .chunk<Customer, Customer>(1000)
-                .reader(pagingItemReader())
-                .processor(itemProcessor())
-                .writer(customerItemWriter())
-                .faultTolerant()
-                .build()
-    }
-
-    @Bean
-    @Profile("master")
     fun job(): Job {
         return jobBuilderFactory.get("job")
-                .start(step())
+                .start(stepBuilderFactory.get("step1").tasklet(tasklet(null)).build())
                 .build()
     }
 }
